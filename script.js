@@ -1,11 +1,25 @@
-let db;
-const songList = document.getElementById('songList');
-const audioPlayer = document.getElementById('audioPlayer');
-const dropArea = document.getElementById('drop-area');
-const fileInput = document.getElementById('fileInput');
-
 // IndexedDB setup
-const request = indexedDB.open("musicDB", 1);
+let db;
+const request = indexedDB.open("MusicPlayerDB", 1);
+request.onupgradeneeded = function (event) {
+  db = event.target.result;
+  const objectStore = db.createObjectStore("songs", { keyPath: "name" });
+};
+request.onsuccess = function (event) {
+  db = event.target.result;
+  loadSongsFromDB();
+};
+request.onerror = function (event) {
+  console.error("IndexedDB error:", event.target.errorCode);
+};
+
+// DOM elements
+const dropArea = document.getElementById("drop-area");
+const fileInput = document.getElementById("fileInput");
+const songList = document.getElementById("songList");
+const audioPlayer = document.getElementById("audioPlayer");
+const loopBtn = document.getElementById("loopBtn");
+const volumeSlider = document.getElementById("volumeSlider");
 
 // Load saved settings
 window.addEventListener('DOMContentLoaded', () => {
@@ -20,113 +34,83 @@ window.addEventListener('DOMContentLoaded', () => {
   audioPlayer.loop = savedLoop;
   loopBtn.textContent = savedLoop ? "Disable Loop" : "Enable Loop";
   loopBtn.style.background = savedLoop ? "#f44336" : "#4caf50";
-  loopBtn.addEventListener('click', () => {
-  audioPlayer.loop = !audioPlayer.loop;
-  loopBtn.textContent = audioPlayer.loop ? "Disable Loop" : "Enable Loop";
-  loopBtn.style.background = audioPlayer.loop ? "#f44336" : "#4caf50";
-  localStorage.setItem('loopEnabled', audioPlayer.loop); // <-- Save it!
-    volumeSlider.addEventListener('input', () => {
-  audioPlayer.volume = volumeSlider.value;
-  localStorage.setItem('volumeLevel', volumeSlider.value); // <-- Save it!
 });
-
-
-request.onerror = () => console.error("Failed to open IndexedDB.");
-request.onsuccess = () => {
-  db = request.result;
-  loadSongs();
-};
-request.onupgradeneeded = (e) => {
-  db = e.target.result;
-  db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
-};
-
-// Load and display songs
-function loadSongs() {
-  const tx = db.transaction("songs", "readonly");
-  const store = tx.objectStore("songs");
-  const getAll = store.getAll();
-
-  getAll.onsuccess = () => {
-    songList.innerHTML = '';
-    getAll.result.forEach(song => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <span>${song.name}</span>
-        <div>
-          <button onclick="playSong(${song.id})">▶</button>
-          <button onclick="deleteSong(${song.id})">🗑</button>
-        </div>`;
-      songList.appendChild(li);
-    });
-  };
-}
-
-// Play song
-function playSong(id) {
-  const tx = db.transaction("songs", "readonly");
-  const store = tx.objectStore("songs");
-  const get = store.get(id);
-
-  get.onsuccess = () => {
-    const song = get.result;
-    const blob = new Blob([song.file], { type: song.type });
-    audioPlayer.src = URL.createObjectURL(blob);
-    audioPlayer.play();
-  };
-}
-
-// Delete song
-function deleteSong(id) {
-  const tx = db.transaction("songs", "readwrite");
-  const store = tx.objectStore("songs");
-  store.delete(id).onsuccess = loadSongs;
-}
-
-// Upload files
-dropArea.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-dropArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropArea.style.background = '#444';
-});
-dropArea.addEventListener('dragleave', () => {
-  dropArea.style.background = '#222';
-});
-dropArea.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropArea.style.background = '#222';
-  handleFiles(e.dataTransfer.files);
-});
-
-function handleFiles(files) {
-  [...files].forEach(file => {
-    if (!['audio/mpeg', 'audio/ogg', 'audio/wav'].includes(file.type)) {
-      alert('Only MP3, OGG, WAV supported.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function () {
-      const tx = db.transaction("songs", "readwrite");
-      const store = tx.objectStore("songs");
-      store.add({ name: file.name, file: reader.result, type: file.type }).onsuccess = loadSongs;
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
 
 // Loop toggle
-const loopBtn = document.getElementById('loopBtn');
 loopBtn.addEventListener('click', () => {
   audioPlayer.loop = !audioPlayer.loop;
   loopBtn.textContent = audioPlayer.loop ? "Disable Loop" : "Enable Loop";
   loopBtn.style.background = audioPlayer.loop ? "#f44336" : "#4caf50";
+  localStorage.setItem('loopEnabled', audioPlayer.loop);
 });
 
-// Volume slider
-const volumeSlider = document.getElementById('volumeSlider');
+// Volume control
 volumeSlider.addEventListener('input', () => {
   audioPlayer.volume = volumeSlider.value;
+  localStorage.setItem('volumeLevel', volumeSlider.value);
 });
 
+// File drag and drop
+dropArea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropArea.classList.add("dragover");
+});
+dropArea.addEventListener("dragleave", () => {
+  dropArea.classList.remove("dragover");
+});
+dropArea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropArea.classList.remove("dragover");
+  handleFiles(e.dataTransfer.files);
+});
+dropArea.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => handleFiles(fileInput.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach((file) => {
+    if (!file.type.startsWith("audio/")) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const transaction = db.transaction(["songs"], "readwrite");
+      const objectStore = transaction.objectStore("songs");
+      objectStore.put({ name: file.name, data: e.target.result });
+      transaction.oncomplete = loadSongsFromDB;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadSongsFromDB() {
+  const transaction = db.transaction(["songs"], "readonly");
+  const objectStore = transaction.objectStore("songs");
+  const request = objectStore.getAll();
+
+  request.onsuccess = function () {
+    songList.innerHTML = "";
+    request.result.forEach((song) => {
+      const li = document.createElement("li");
+      li.textContent = song.name;
+
+      const playBtn = document.createElement("button");
+      playBtn.innerHTML = "▶️";
+      playBtn.onclick = () => {
+        audioPlayer.src = song.data;
+        audioPlayer.play();
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = "🗑️";
+      deleteBtn.onclick = () => {
+        const delTx = db.transaction(["songs"], "readwrite");
+        const store = delTx.objectStore("songs");
+        store.delete(song.name);
+        delTx.oncomplete = loadSongsFromDB;
+      };
+
+      li.appendChild(playBtn);
+      li.appendChild(deleteBtn);
+      songList.appendChild(li);
+    });
+  };
+}
