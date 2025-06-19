@@ -91,3 +91,18 @@ function handleFiles(files) {
     reader.readAsArrayBuffer(file);
   });
 }
+
+// Loop toggle
+const loopBtn = document.getElementById('loopBtn');
+loopBtn.addEventListener('click', () => {
+  audioPlayer.loop = !audioPlayer.loop;
+  loopBtn.textContent = audioPlayer.loop ? "Disable Loop" : "Enable Loop";
+  loopBtn.style.background = audioPlayer.loop ? "#f44336" : "#4caf50";
+});
+
+// Volume slider
+const volumeSlider = document.getElementById('volumeSlider');
+volumeSlider.addEventListener('input', () => {
+  audioPlayer.volume = volumeSlider.value;
+});
+
