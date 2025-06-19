@@ -55,3 +55,25 @@ audio {
   width: 100%;
   margin-top: 20px;
 }
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+#loopBtn {
+  background: #4caf50;
+  border: none;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#volumeSlider {
+  width: 150px;
+}
+
