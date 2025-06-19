@@ -7,6 +7,30 @@ const fileInput = document.getElementById('fileInput');
 // IndexedDB setup
 const request = indexedDB.open("musicDB", 1);
 
+// Load saved settings
+window.addEventListener('DOMContentLoaded', () => {
+  const savedLoop = localStorage.getItem('loopEnabled') === 'true';
+  const savedVolume = parseFloat(localStorage.getItem('volumeLevel'));
+
+  if (!isNaN(savedVolume)) {
+    audioPlayer.volume = savedVolume;
+    volumeSlider.value = savedVolume;
+  }
+
+  audioPlayer.loop = savedLoop;
+  loopBtn.textContent = savedLoop ? "Disable Loop" : "Enable Loop";
+  loopBtn.style.background = savedLoop ? "#f44336" : "#4caf50";
+  loopBtn.addEventListener('click', () => {
+  audioPlayer.loop = !audioPlayer.loop;
+  loopBtn.textContent = audioPlayer.loop ? "Disable Loop" : "Enable Loop";
+  loopBtn.style.background = audioPlayer.loop ? "#f44336" : "#4caf50";
+  localStorage.setItem('loopEnabled', audioPlayer.loop); // <-- Save it!
+    volumeSlider.addEventListener('input', () => {
+  audioPlayer.volume = volumeSlider.value;
+  localStorage.setItem('volumeLevel', volumeSlider.value); // <-- Save it!
+});
+
+
 request.onerror = () => console.error("Failed to open IndexedDB.");
 request.onsuccess = () => {
   db = request.result;
