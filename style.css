@@ -1,50 +1,53 @@
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
+  font-family: sans-serif;
+  background: #121212;
+  color: white;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   text-align: center;
 }
 
 .container {
-  max-width: 600px;
+  padding: 20px;
+  max-width: 500px;
   margin: auto;
 }
 
-form {
+.upload-area {
+  background: #222;
+  padding: 30px;
+  border: 2px dashed #444;
   margin-bottom: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+  border-radius: 10px;
 }
 
-input[type="file"] {
-  margin-bottom: 10px;
+.upload-area:hover {
+  background: #333;
 }
 
-#songList {
+ul {
   list-style: none;
   padding: 0;
 }
 
-.song-item {
+li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #1e1e1e;
   display: flex;
   justify-content: space-between;
-  background: white;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
   align-items: center;
+  border-radius: 8px;
 }
 
-.song-name {
-  flex-grow: 1;
-  text-align: left;
-  cursor: pointer;
-}
-
-.delete-btn {
-  background: none;
+button {
+  background: #ff4b5c;
   border: none;
-  color: red;
-  font-size: 18px;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
