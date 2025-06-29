@@ -1,6 +1,8 @@
 const audio = document.getElementById("audio");
+// DO NOT re-append audio to the DOM again
 audio.setAttribute("preload", "auto");
-audio.style.display = "none";
+audio.controls = false;
+audio.style.display = "none"; // keep it hidden
 document.body.appendChild(audio);
 
 const progress = document.getElementById("progress");
