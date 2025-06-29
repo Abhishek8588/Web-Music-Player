@@ -8,32 +8,37 @@
 </head>
 <body>
   <div class="player-container">
+    <!-- Dark Mode Toggle -->
     <label class="switch">
       <input type="checkbox" id="themeToggle" />
       <span class="slider round"></span>
     </label>
-  <h2 id="song-title">No song playing</h2>
-<img id="album-art" src="default.jpg" alt="Album Art" />
 
-<!-- Custom Audio Player -->
-<div class="player-ui">
-  <input type="range" id="progress" value="0" />
-  <div class="controls">
-    <button id="backward">⏮️</button>
-    <button id="play">▶️</button>
-    <button id="forward">⏭️</button>
-    <button id="loop">🔁</button>
-    <button id="upload">📁 Upload</button>
+    <h2 id="song-title">No song playing</h2>
+    <img id="album-art" src="default.jpg" alt="Album Art" />
+
+    <!-- Custom Player -->
+    <div class="player-ui">
+      <input type="range" id="progress" value="0" />
+      <div class="controls">
+        <button id="backward">⏮️</button>
+        <button id="play">▶️</button>
+        <button id="forward">⏭️</button>
+        <button id="loop">🔁</button>
+        <button id="upload">📁 Upload</button>
+      </div>
+      <input type="range" id="volume" min="0" max="1" step="0.01" />
+    </div>
+
+    <input type="file" id="fileInput" accept=".mp3,.ogg,.wav" hidden />
+
+    <!-- Visualizer -->
+    <div class="visualizer" id="visualizer">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div>
+    </div>
   </div>
-  <input type="range" id="volume" min="0" max="1" step="0.01" />
-</div>
 
-<input type="file" id="fileInput" accept=".mp3,.ogg,.wav" hidden />
-
-<!-- Visualizer stays the same -->
-<div class="visualizer" id="visualizer">
-  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-</div>
   <script src="script.js"></script>
 </body>
 </html>
