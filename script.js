@@ -1,116 +1,64 @@
-// IndexedDB setup
-let db;
-const request = indexedDB.open("MusicPlayerDB", 1);
-request.onupgradeneeded = function (event) {
-  db = event.target.result;
-  const objectStore = db.createObjectStore("songs", { keyPath: "name" });
-};
-request.onsuccess = function (event) {
-  db = event.target.result;
-  loadSongsFromDB();
-};
-request.onerror = function (event) {
-  console.error("IndexedDB error:", event.target.errorCode);
-};
-
-// DOM elements
-const dropArea = document.getElementById("drop-area");
+const audio = document.getElementById("audio-player");
+const progress = document.getElementById("progress");
+const playBtn = document.getElementById("play");
+const loopBtn = document.getElementById("loop");
+const uploadBtn = document.getElementById("upload");
 const fileInput = document.getElementById("fileInput");
-const songList = document.getElementById("songList");
-const audioPlayer = document.getElementById("audioPlayer");
-const loopBtn = document.getElementById("loopBtn");
-const volumeSlider = document.getElementById("volumeSlider");
+const songTitle = document.getElementById("song-title");
+const albumArt = document.getElementById("album-art");
+const themeToggle = document.getElementById("themeToggle");
 
-// Load saved settings
-window.addEventListener('DOMContentLoaded', () => {
-  const savedLoop = localStorage.getItem('loopEnabled') === 'true';
-  const savedVolume = parseFloat(localStorage.getItem('volumeLevel'));
+// State
+let isLooping = JSON.parse(localStorage.getItem("loopEnabled")) || false;
+let theme = localStorage.getItem("theme") || "dark";
 
-  if (!isNaN(savedVolume)) {
-    audioPlayer.volume = savedVolume;
-    volumeSlider.value = savedVolume;
+// Apply initial settings
+loopBtn.style.color = isLooping ? "cyan" : "white";
+themeToggle.checked = theme === "light";
+document.body.style.background = theme === "light" ? "#f0f0f0" : "linear-gradient(135deg, #0f0c29, #302b63, #24243e)";
+document.body.style.color = theme === "light" ? "#222" : "white";
+
+loopBtn.onclick = () => {
+  isLooping = !isLooping;
+  audio.loop = isLooping;
+  loopBtn.style.color = isLooping ? "cyan" : "white";
+  localStorage.setItem("loopEnabled", isLooping);
+};
+
+themeToggle.onchange = () => {
+  theme = themeToggle.checked ? "light" : "dark";
+  localStorage.setItem("theme", theme);
+  document.body.style.background = theme === "light" ? "#f0f0f0" : "linear-gradient(135deg, #0f0c29, #302b63, #24243e)";
+  document.body.style.color = theme === "light" ? "#222" : "white";
+};
+
+uploadBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  audio.src = url;
+  songTitle.textContent = file.name;
+  albumArt.src = "album.jpg"; // Replace with a proper default or generated one
+  audio.play();
+};
+
+playBtn.onclick = () => {
+  if (audio.paused) {
+    audio.play();
+    playBtn.textContent = "⏸️";
+  } else {
+    audio.pause();
+    playBtn.textContent = "▶️";
   }
+};
 
-  audioPlayer.loop = savedLoop;
-  loopBtn.textContent = savedLoop ? "Disable Loop" : "Enable Loop";
-  loopBtn.style.background = savedLoop ? "#f44336" : "#4caf50";
-});
+audio.ontimeupdate = () => {
+  progress.value = (audio.currentTime / audio.duration) * 100 || 0;
+};
 
-// Loop toggle
-loopBtn.addEventListener('click', () => {
-  audioPlayer.loop = !audioPlayer.loop;
-  loopBtn.textContent = audioPlayer.loop ? "Disable Loop" : "Enable Loop";
-  loopBtn.style.background = audioPlayer.loop ? "#f44336" : "#4caf50";
-  localStorage.setItem('loopEnabled', audioPlayer.loop);
-});
-
-// Volume control
-volumeSlider.addEventListener('input', () => {
-  audioPlayer.volume = volumeSlider.value;
-  localStorage.setItem('volumeLevel', volumeSlider.value);
-});
-
-// File drag and drop
-dropArea.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropArea.classList.add("dragover");
-});
-dropArea.addEventListener("dragleave", () => {
-  dropArea.classList.remove("dragover");
-});
-dropArea.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dropArea.classList.remove("dragover");
-  handleFiles(e.dataTransfer.files);
-});
-dropArea.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", () => handleFiles(fileInput.files));
-
-function handleFiles(files) {
-  Array.from(files).forEach((file) => {
-    if (!file.type.startsWith("audio/")) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const transaction = db.transaction(["songs"], "readwrite");
-      const objectStore = transaction.objectStore("songs");
-      objectStore.put({ name: file.name, data: e.target.result });
-      transaction.oncomplete = loadSongsFromDB;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadSongsFromDB() {
-  const transaction = db.transaction(["songs"], "readonly");
-  const objectStore = transaction.objectStore("songs");
-  const request = objectStore.getAll();
-
-  request.onsuccess = function () {
-    songList.innerHTML = "";
-    request.result.forEach((song) => {
-      const li = document.createElement("li");
-      li.textContent = song.name;
-
-      const playBtn = document.createElement("button");
-      playBtn.innerHTML = "▶️";
-      playBtn.onclick = () => {
-        audioPlayer.src = song.data;
-        audioPlayer.play();
-      };
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.innerHTML = "🗑️";
-      deleteBtn.onclick = () => {
-        const delTx = db.transaction(["songs"], "readwrite");
-        const store = delTx.objectStore("songs");
-        store.delete(song.name);
-        delTx.oncomplete = loadSongsFromDB;
-      };
-
-      li.appendChild(playBtn);
-      li.appendChild(deleteBtn);
-      songList.appendChild(li);
-    });
-  };
-}
+progress.oninput = () => {
+  audio.currentTime = (progress.value * audio.duration) / 100;
+};
