@@ -1,4 +1,4 @@
-const audio = document.createElement("audio");
+const audio = document.getElementById("audio");
 audio.setAttribute("preload", "auto");
 audio.style.display = "none";
 document.body.appendChild(audio);
