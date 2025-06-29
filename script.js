@@ -86,6 +86,7 @@ function playSong(arrayBuffer, name) {
   const blob = new Blob([arrayBuffer], { type: "audio/mp3" });
   const url = URL.createObjectURL(blob);
   audio.src = url;
+  audio.loop = isLooping; // ✅ Fix: Apply loop on new song
   audio.play().then(() => {
     playBtn.textContent = "⏸️";
   });
