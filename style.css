@@ -158,4 +158,30 @@ input:checked + .slider:before {
     transform: scale(0.85);
   }
 }
+.player-ui {
+  margin-top: 15px;
+}
+
+#progress, #volume {
+  width: 100%;
+  margin: 8px 0;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #00f2ff, #4e9eff);
+}
+
+#volume {
+  background: linear-gradient(to right, #ffa500, #ff4e50);
+}
+
+#progress::-webkit-slider-thumb,
+#volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
 
